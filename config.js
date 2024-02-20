@@ -1,6 +1,4 @@
 const Conf = require("conf");
-const config = require("dotenv").config;
-config();
 
 const ACTUAL_SERVER_URL = process.env.ACTUAL_SERVER_URL || "";
 const ACTUAL_SERVER_PASSWORD = process.env.ACTUAL_SERVER_PASSWORD || "";
@@ -53,7 +51,8 @@ function getConf(username) {
     const key = `${username}_${appConfig.PLAID_ENV}`;
 
     const tmp = new Conf({
-        configName: key
+        configName: key,
+        cwd: process.env.ACTUAL_PLAID_CONFIG_BASE_PATH,
     });
     tmp.set("user", key);
     return tmp;
