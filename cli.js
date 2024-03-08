@@ -80,7 +80,7 @@ const getStartDate = async (actual, actualId) => {
 
     const lastTransactionDate = await getLastTransactionDate(actual, actualId);
 
-    dateFns.format(
+    return dateFns.format(
         dateFns.min([date, lastTransactionDate]),
         "yyyy-MM-dd"
     );
@@ -193,7 +193,7 @@ module.exports = async (command, flags) => {
             }
 
             for (let [actualId, account] of accountsToSync) {
-                const startDate = getStartDate(actual, actualId);
+                const startDate = await getStartDate(actual, actualId);
                 console.log("Importing transactions for account: ", account.plaidAccount.name, "from ", startDate, "to", endDate)
                 const tempStartTime = new Date();
 
