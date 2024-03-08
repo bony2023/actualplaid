@@ -74,6 +74,18 @@ const printSyncedAccounts = () => {
     );
 };
 
+const getStartDate = async (actual, actualId) => {
+    let date = new Date();
+    date.setDate(date.getDate() - appConfig.MAX_DAYS_TO_IMPORT);
+
+    const lastTransactionDate = await getLastTransactionDate(actual, actualId);
+
+    dateFns.format(
+        dateFns.min([date, lastTransactionDate]),
+        "yyyy-MM-dd"
+    );
+};
+
 async function startLinkingPlaid() {
     const { dissmissedWarning } = await inquirer.prompt({
         type: "confirm",
@@ -181,39 +193,25 @@ module.exports = async (command, flags) => {
             }
 
             for (let [actualId, account] of accountsToSync) {
-                const startDate = dateFns.format(
-                    new Date(
-                        flags["since"] ||
-                        account.lastImport ||
-                        await getLastTransactionDate(actual, actualId)
-                    ),
-                    "yyyy-MM-dd"
+                const startDate = getStartDate(actual, actualId);
+                console.log("Importing transactions for account: ", account.plaidAccount.name, "from ", startDate, "to", endDate)
+                const tempStartTime = new Date();
+
+                const transactionsResponse = await cachedTransaction(account.plaidToken, startDate);
+                const transactionsForThisAccount = transactionsResponse.transactions.filter(
+                    (transaction) =>
+                        transaction.account_id === account.plaidAccount.account_id
                 );
 
-                // Check if start and end is the same day, but not same second
-                if (startDate === endDate) {
-                    console.log("Skipping: ", account.plaidAccount.name, "because it was already imported today")
-                } else {
-
-                    console.log("Importing transactions for account: ", account.plaidAccount.name, "from ", startDate, "to", endDate)
-                    const tempStartTime = new Date();
-
-                    const transactionsResponse = await cachedTransaction(account.plaidToken, startDate);
-                    const transactionsForThisAccount = transactionsResponse.transactions.filter(
-                        (transaction) =>
-                            transaction.account_id === account.plaidAccount.account_id
-                    );
-
-                    // Sleep at least 2 sec to let user cancel, continue with promise
-                    const timeTookForPlaid = new Date() - tempStartTime;
-                    const timeToSleep = 2000 - timeTookForPlaid;
-                    if (timeToSleep > 0) {
-                        await new Promise((resolve) => setTimeout(resolve, timeToSleep));
-                    }
-
-                    await importPlaidTransactions(actual, actualId, account.plaidBankName, transactionsForThisAccount);
-                    config.set(`actualSync.${actualId}.lastImport`, new Date());
+                // Sleep at least 2 sec to let user cancel, continue with promise
+                const timeTookForPlaid = new Date() - tempStartTime;
+                const timeToSleep = 2000 - timeTookForPlaid;
+                if (timeToSleep > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, timeToSleep));
                 }
+
+                await importPlaidTransactions(actual, actualId, account.plaidBankName, transactionsForThisAccount);
+                config.set(`actualSync.${actualId}.lastImport`, new Date());
             }
             console.log("Import completed for all accounts");
 

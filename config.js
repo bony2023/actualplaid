@@ -21,6 +21,8 @@ const PLAID_PRODUCTS = (process.env.PLAID_PRODUCTS || "transactions").split(
 const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",");
 const PLAID_LANGUAGE = (process.env.PLAID_LANGUAGE || "en")
 
+const MAX_DAYS_TO_IMPORT = (process.env.MAX_DAYS_TO_IMPORT || 14)
+
 function getAppConfigFromEnv() {
     const appConfig = {
         APP_PORT,
@@ -32,7 +34,8 @@ function getAppConfigFromEnv() {
         PLAID_LANGUAGE,
         PLAID_COUNTRY_CODES,
         ACTUAL_SERVER_URL,
-        ACTUAL_SERVER_PASSWORD
+        ACTUAL_SERVER_PASSWORD,
+        MAX_DAYS_TO_IMPORT
     }
 
     // Assert that all required environment variables are set
